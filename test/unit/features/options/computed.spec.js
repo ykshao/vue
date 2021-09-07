@@ -206,6 +206,18 @@ describe('Options computed', () => {
     expect(`computed property "a" is already defined as a prop`).toHaveBeenWarned()
   })
 
+  it('warn conflict with methods', () => {
+    new Vue({
+      computed: {
+        a: () => 2
+      },
+      methods: {
+        a: () => {}
+      }
+    })
+    expect(`computed property "a" is already defined as a method`).toHaveBeenWarned()
+  })
+
   it('rethrow computed error', () => {
     const vm = new Vue({
       computed: {
@@ -215,41 +227,5 @@ describe('Options computed', () => {
       }
     })
     expect(() => vm.a).toThrowError('rethrow')
-  })
-
-  // #7767
-  it('should avoid unnecessary re-renders', done => {
-    const computedSpy = jasmine.createSpy('computed')
-    const updatedSpy = jasmine.createSpy('updated')
-    const vm = new Vue({
-      data: {
-        msg: 'bar'
-      },
-      computed: {
-        a () {
-          computedSpy()
-          return this.msg !== 'foo'
-        }
-      },
-      template: `<div>{{ a }}</div>`,
-      updated: updatedSpy
-    }).$mount()
-
-    expect(vm.$el.textContent).toBe('true')
-    expect(computedSpy.calls.count()).toBe(1)
-    expect(updatedSpy.calls.count()).toBe(0)
-
-    vm.msg = 'baz'
-    waitForUpdate(() => {
-      expect(vm.$el.textContent).toBe('true')
-      expect(computedSpy.calls.count()).toBe(2)
-      expect(updatedSpy.calls.count()).toBe(0)
-    }).then(() => {
-      vm.msg = 'foo'
-    }).then(() => {
-      expect(vm.$el.textContent).toBe('false')
-      expect(computedSpy.calls.count()).toBe(3)
-      expect(updatedSpy.calls.count()).toBe(1)
-    }).then(done)
   })
 })
